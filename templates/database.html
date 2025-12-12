@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Database | MoneyFarmV10</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    /* === Styles for Database Page === */
+    .content-wrapper {
+      padding: 3rem 2rem;
+      margin-left: 0;
+      transition: margin-left 0.25s ease-in-out;
+    }
+
+    .query-widget {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      max-width: 380px;
+      color: #E9EAF1;
+      margin-left: 2rem;
+    }
+
+    .selectors-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .select-main-type, .select-main-time {
+      position: relative;
+      flex-grow: 1;
+    }
+
+    .select-main-type select, .select-main-time select {
+      width: 100%;
+      padding: 0.6rem 1rem;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background: rgba(30, 30, 30, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      color: #dadada;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.2s ease, border 0.2s ease;
+    }
+
+    .select-main-type select:focus, .select-main-time select:focus {
+      outline: none;
+      background: rgba(20, 20, 20, 0.98);
+      border: 1px solid #8AB4F8;
+      box-shadow: 0 0 10px rgba(138, 180, 248, 0.4);
+    }
+
+    .select-main-type select option, .select-main-time select option {
+      background: #1c1c1c;
+      color: #dadada;
+    }
+
+    .select-main-type::after, .select-main-time::after {
+      content: '\f078';
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      position: absolute;
+      top: 50%;
+      right: 1rem;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: #8AB4F8;
+      opacity: 0.7;
+    }
+
+    .input-container {
+      margin-bottom: 1.2rem;
+    }
+
+    .input-container input {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      color: #E9EAF1;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    .input-container input::placeholder {
+      color: #E9EAF1;
+      opacity: 0.6;
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      background: rgba(138, 180, 248, 0.2);
+      border: 1px solid #8AB4F8;
+      border-radius: 12px;
+      color: #E9EAF1;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .submit-btn:hover {
+      background: rgba(138, 180, 248, 0.3);
+      box-shadow: 0 0 15px rgba(138, 180, 248, 0.5);
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 768px) {
+      .query-widget {
+        max-width: 100%;
+      }
+      .selectors-row {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+
+    /* Toast Notification Styles */
+    #toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+    }
+
+    .toast {
+      min-width: 200px;
+      margin-bottom: 10px;
+      padding: 1rem 1.2rem;
+      border-radius: 10px;
+      color: #fff;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      opacity: 0;
+      transform: translateX(100%);
+      animation: slideIn 0.5s forwards, fadeOut 0.5s forwards 3s;
+    }
+
+    .toast.success { background-color: #28a745; }
+    .toast.pending { background-color: #ffc107; color: #333; }
+    .toast.failed  { background-color: #dc3545; }
+
+    @keyframes slideIn {
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes fadeOut {
+      to { opacity: 0; transform: translateX(100%); }
+    }
+.widgets-row {
+  display: flex;
+  justify-content: space-between; /* Spread evenly */
+  align-items: flex-start;
+  gap: 1.5rem;
+  flex-wrap: nowrap; /* ⌌ prevent wrapping */
+  padding: 2rem;
+}
+
+/* Widget widths */
+.main-widget {
+  flex: 0 0 25%; /* 25% width */
+}
+
+.farm-widget {
+  flex: 0 0 30%; /* 30% width */
+}
+
+.link-widget {
+  flex: 0 0 30%; /* 30% width */
+}
+
+/* Clear button styling */
+.clear-btn {
+ 
+  background: rgba(220,53,69,0.2);
+  border-color: #dc3545;
+}
+
+@media (max-width: 1200px) {
+  .main-widget, .farm-widget, .link-widget {
+    flex: 0 0 45%;
+    max-width: 45%;
+  }
+}
+
+@media (max-width: 768px) {
+  .widgets-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .main-widget, .farm-widget {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+  .link-widget {
+      flex: 1 1 100%;
+      max-width: 50%;
+    }
+}
+.button-row {
+  display: flex;
+  justify-content: space-between; /* Submit left, Clear right */
+  gap: 1rem;
+  margin-top: 10px;
+}
+
+.button-row .submit-btn {
+  flex: 1; /* take equal width */
+}
+
+.button-row .clear-btn {
+  flex: 1;
+  background: rgba(220,53,69,0.2);
+  border-color: #dc3545;
+}
+
+.query-widget {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  color: #E9EAF1;
+
+}
+
+.link-widget {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  width: 90%;
+  max-width: 30%;  /* 30% width on large screens */
+  color: #E9EAF1;
+
+}
+
+.row-inputs {
+  display: flex;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+  flex-wrap: nowrap; /* Prevent wrapping to new line */
+}
+
+.row-inputs input[type="number"] {
+  width: 80px;  /* fixed width for Start/End ID */
+  padding: 0.6rem;
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #dadada;
+  font-size: 0.95rem;
+  flex-shrink: 0; /* don't shrink smaller than 80px */
+}
+
+.row-inputs select {
+  flex: 1; /* take remaining space */
+  padding: 0.6rem;
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #dadada;
+  font-size: 0.95rem;
+}
+
+
+textarea#linksInput {
+  width: 93%;
+  min-height: 420px;
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 0.8rem;
+  color: #E9EAF1;
+  margin-bottom: 1rem;
+  resize: vertical;
+}
+textarea {
+
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 0.8rem;
+  color: #E9EAF1;
+  margin-bottom: 1rem;
+  resize: vertical;
+}
+@media (max-width: 768px) {
+  textarea#linksInput {
+    min-height: 220px;
+  }
+}
+
+/* --- Replace previous widgets-row/second-row layout with a two-column layout --- */
+/* Container that holds left (70%) and right (30%) */
+.layout-wrapper {
+  display: flex;
+  gap: 1.5rem;
+  padding: 2rem;
+  align-items: stretch;
+  box-sizing: border-box;
+}
+
+/* Left column is a 2x2 grid taking ~70% width */
+.left-column {
+  flex: 0 0 65%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr; /* make rows equal height */
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+/* Right column holds the Link Uploader and stretches to match left column height */
+.right-column {
+  flex: 0 0 30%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Make query widgets fill their grid cell and stretch vertically */
+.left-column .query-widget,
+.left-column .shortlink-widget,
+.left-column .shortlink-payments-widget {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  width: 90%;
+  max-width: none;
+}
+
+/* Ensure inner form and components don't overflow; let textarea/buttons layout naturally */
+.left-column .query-widget form,
+.left-column .shortlink-widget form,
+.left-column .shortlink-payments-widget form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  height: 100%;
+}
+
+/* Link uploader should fill the right column fully */
+.right-column .link-widget {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  max-width: none;
+}
+
+/* Make textarea in Link Uploader grow to take remaining space */
+.right-column .link-widget textarea#linksInput {
+  flex: 1 1 auto;
+  min-height: 0; /* allow flex to control height */
+
+}
+
+/* Ensure upload button sits below textarea */
+.right-column .link-widget .submit-btn {
+  align-self: stretch;
+  margin-top: auto;
+}
+
+/* Override any old width-based widget classes so grid is consistent */
+.main-widget, .farm-widget, .shortlink-widget, .shortlink-payments-widget, .link-widget {
+  flex: none;
+  max-width: 100%;
+}
+
+/* Responsive: stack columns on narrow screens */
+@media (max-width: 1000px) {
+  .layout-wrapper {
+    flex-direction: column;
+    padding: 1rem;
+  }
+  .left-column, .right-column {
+    flex: 1 1 100%;
+    max-width: 100%;
+
+  }
+  .left-column {
+    grid-template-columns: 1fr;
+  }
+  .right-column .link-widget textarea#linksInput {
+    min-height: 200px;
+  }
+
+}
+
+/* Ensure Confirmed Views and Earnings and Farm Data heights remain fixed */
+.main-widget,
+.farm-widget {
+  height: auto; /* Keep natural height */
+}
+
+/* Adjust button sizes for Farm Data to match Confirmed Views and Earnings */
+.farm-widget .submit-btn {
+  padding: 0.6rem 1rem; /* Slightly smaller padding */
+  font-size: 1rem; /* Match button size */
+}
+
+/* Override previous grid auto-rows to allow different heights */
+.left-column {
+  grid-template-rows: auto 1fr; /* First row auto height, second row flexible */
+  grid-auto-rows: none;
+}
+
+/* Reset the top widgets to their natural height */
+.main-widget,
+.farm-widget {
+  height: auto !important; /* Use !important to override other height settings */
+  align-self: start; /* Align to top */
+}
+
+/* Only allow bottom widgets and right column to stretch */
+.shortlink-widget,
+.shortlink-payments-widget,
+.link-widget {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure textareas only in bottom widgets and Link Uploader resize dynamically */
+.shortlink-widget textarea,
+.shortlink-payments-widget textarea,
+.link-widget textarea {
+  flex: 1 1 auto;
+  min-height: 100px;
+}
+
+/* Update textarea styles to prevent auto-extending */
+.shortlink-widget textarea,
+.shortlink-payments-widget textarea {
+  height: 150px; /* Fixed initial height */
+  min-height: 100px;
+  max-height: 500px;
+  resize: vertical;
+  transition: none; /* Remove smooth transition */
+}
+
+/* Remove any flex-grow behavior */
+.input-container textarea {
+  flex: none;
+}
+
+/* Update textarea styles for Shortlink widgets */
+.shortlink-widget textarea,
+.shortlink-payments-widget textarea {
+  width: 100%;  /* Take full width of container */
+  height: 150px;
+  min-height: 100px;
+  max-height: 500px;
+  resize: vertical;
+  transition: none;
+  box-sizing: border-box;  /* Include padding in width calculation */
+  margin: 0;  /* Remove any margins */
+}
+
+/* Remove any max-width constraints from containers */
+.shortlink-widget .input-container,
+.shortlink-payments-widget .input-container {
+  width: 100%;
+  max-width: none;
+}
+
+/* Update Shortlink controls to match main widget style */
+.shortlink-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.shortlink-controls .date-picker-container,
+.shortlink-controls .select-site,
+.shortlink-controls .select-status,
+.shortlink-controls .select-metric {
+  position: relative;
+  flex: 1;
+}
+
+.shortlink-controls input[type="date"],
+.shortlink-controls select {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #dadada;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.2s ease, border 0.2s ease;
+}
+
+.shortlink-controls input[type="date"]:focus,
+.shortlink-controls select:focus {
+  outline: none;
+  background: rgba(20, 20, 20, 0.98);
+  border: 1px solid #8AB4F8;
+  box-shadow: 0 0 10px rgba(138, 180, 248, 0.4);
+}
+
+/* Add dropdown arrow to selects */
+.shortlink-controls .select-site::after,
+.shortlink-controls .select-status::after,
+.shortlink-controls .select-metric::after {
+  content: '\f078';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #8AB4F8;
+  opacity: 0.7;
+}
+
+/* Remove default date picker icon */
+.shortlink-controls input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+/* Responsive adjustments */
+
+.date-picker-container{
+  max-width: 120px;
+  margin-right: 2rem;
+}
+@media (max-width: 768px) {
+.date-picker-container{
+  max-width: 100px;
+  margin-right: 2rem;
+}
+}
+  </style>
+</head>
+<body>
+  <button class="toggle-btn">☰</button>
+  <aside class="sidebar">
+    <h2>Menu</h2>
+    <ul>
+      <li><a href="/">Dashboard</a></li>
+      <li><a href="payments">Payments</a></li>
+      <li><a href="database">Database</a></li>
+      <li><a href="analytics">Analytics</a></li>
+      <li><a href="resources">Resources</a></li>
+    </ul>
+  </aside>
+
+<div class="layout-wrapper">
+  <!-- LEFT: 2x2 Grid (70%) -->
+  <div class="left-column">
+    <!-- Confirmed Views and Earnings (top-left) -->
+    <div class="query-widget main-widget">
+      <form id="main-data-form">
+        <div class="widget-title">
+          <i class="fa-solid fa-database"></i> Confirmed Views and Earnings
+        </div>
+
+        <div class="selectors-row">
+          <div class="select-main-time">
+            <select name="time">
+              <option value="alltime">All Time</option>
+              <option value="today">Today</option>
+            </select>
+          </div>
+
+          <div class="select-main-type">
+            <select name="type">
+              <option value="views">Views</option>
+              <option value="earn">Earn</option>
+              <option value="cpm">CPM</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="input-container">
+          <input type="text" name="value" placeholder="Enter the amount here" required>
+        </div>
+
+        <button type="submit" class="submit-btn">
+          <i class="fa-solid fa-paper-plane"></i> Submit
+        </button>
+      </form>
+    </div>
+
+    <!-- Farm Data (top-right) -->
+    <div class="query-widget farm-widget">
+      <form id="farm-data-form">
+        <div class="widget-title">
+          <i class="fa-solid fa-tractor"></i> Farm Data
+        </div>
+
+        <div class="selectors-row">
+          <div class="select-main-time">
+            <select name="time">
+              <option value="alltime">All Time</option>
+              <option value="today">Today</option>
+            </select>
+          </div>
+
+          <div class="select-main-type">
+            <select name="farm">
+              <option value="all">All Farms</option>
+              <option value="farm1">Farm1</option>
+              <option value="farm2">Farm2</option>
+              <option value="farm3">Farm3</option>
+              <option value="farm4">Farm4</option>
+              <option value="farm5">Farm5</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="input-container">
+          <input type="text" name="value" placeholder="Enter the amount here" required>
+        </div>
+
+        <div class="button-row">
+          <button type="submit" class="submit-btn farm">
+            <i class="fa-solid fa-paper-plane"></i> Submit
+          </button>
+          <button type="button" id="clear-farm-table" class="submit-btn clear-btn">
+            <i class="fa-solid fa-trash"></i> Clear Table Data
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Shortlink Statistics (bottom-left) -->
+    <div class="query-widget shortlink-widget">
+      <form id="shortlink-form">
+        <div class="widget-title">
+          <i class="fa-solid fa-chart-line"></i> Shortlink Statistics
+        </div>
+
+        <div class="shortlink-controls">
+
+
+          <div class="select-site">
+            <select name="site" id="shortlink-site">
+              <option value="site1">Site1</option>
+              <option value="site2">Site2</option>
+              <option value="site3">Site3</option>
+              <option value="site4">Site4</option>
+            </select>
+          </div>
+
+          <div class="select-metric">
+            <select name="metric" id="shortlink-metric">
+              <option value="all">All</option>
+              <option value="views">Views</option>
+              <option value="earning">Earning</option>
+              <option value="cpm">CPM</option>
+            </select>
+          </div>
+                    <div class="date-picker-container">
+            <input type="date" name="date" id="shortlink-date">
+          </div>
+        </div>
+
+        <div class="input-container" id="shortlink-input-container">
+          <input type="text" name="value" id="shortlink-value" placeholder="Enter value here">
+        </div>
+
+        <button type="submit" class="submit-btn">
+          <i class="fa-solid fa-paper-plane"></i> Submit
+        </button>
+      </form>
+    </div>
+
+    <!-- Shortlink Payments (bottom-right) -->
+    <div class="query-widget shortlink-payments-widget">
+      <form id="shortlink-payments-form">
+        <div class="widget-title">
+          <i class="fa-solid fa-money-check-dollar"></i> Shortlink Payments
+        </div>
+
+        <div class="shortlink-controls">
+          <div class="select-site">
+            <select name="site" id="payments-site">
+              <option value="site1">Site1</option>
+              <option value="site2">Site2</option>
+              <option value="site3">Site3</option>
+              <option value="site4">Site4</option>
+            </select>
+          </div>
+
+          <div class="select-status">
+            <select name="status" id="payments-status">
+              <option value="auto">Auto</option>
+              <option value="Completed">Completed</option>
+              <option value="Approved">Approved</option>
+              <option value="Pending">Pending</option>
+              <option value="Cancelled">Cancelled</option>
+              <option value="Hold">Hold</option>
+              <option value="Return">Return</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="input-container">
+          <textarea name="input" id="payments-input" placeholder="Enter ID or paste data here" required></textarea>
+        </div>
+
+        <button type="submit" class="submit-btn">
+          <i class="fa-solid fa-paper-plane"></i> Submit
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- RIGHT: Link Uploader (30%) -->
+  <div class="right-column">
+    <div class="widget link-widget">
+      <div class="widget-title">
+        <i class="fa-solid fa-link"></i> Link Uploader
+      </div>
+
+      <div class="row-inputs">
+        <input type="number" id="startId" placeholder="Start ID" min="1">
+        <input type="number" id="endId" placeholder="End ID" min="1">
+        <select id="linkType">
+          <option value="original_link">Original Link</option>
+          <option value="site1">Site 1</option>
+          <option value="site2">Site 2</option>
+          <option value="site3">Site 3</option>
+          <option value="site4">Site 4</option>
+        </select>
+      </div>
+
+      <textarea id="linksInput" placeholder="Paste your links here (one per line)..."></textarea>
+
+      <button class="submit-btn" onclick="submitLinks()">
+        <i class="fa-solid fa-upload"></i> Upload Links
+      </button>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const metricSelect = document.getElementById("shortlink-metric");
+  const inputContainer = document.getElementById("shortlink-input-container");
+
+  function switchInput() {
+    inputContainer.innerHTML = "";
+    if (metricSelect.value === "all") {
+      inputContainer.innerHTML = `<textarea name="value" id="shortlink-value" placeholder="Paste bulk stats here..." rows="8"></textarea>`;
+    } else {
+      inputContainer.innerHTML = `<input type="text" name="value" id="shortlink-value" placeholder="Enter value here">`;
+    }
+  }
+
+  metricSelect.addEventListener("change", switchInput);
+  switchInput();
+});
+</script>
+  <div id="toast-container"></div>
+<script>
+const farmForm = document.getElementById('farm-data-form');
+const clearBtn = document.getElementById('clear-farm-table');
+
+farmForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    showToast("Updating Farm Data...", "pending");
+
+    const formData = new FormData(farmForm);
+
+    fetch('/update-farm-db', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === "success") showToast(data.message, "success");
+        else showToast(data.message, "failed");
+    })
+    .catch(err => {
+        showToast("Error occurred!", "failed");
+    });
+});
+
+// Clear Table Data
+clearBtn.addEventListener('click', function(){
+    showToast("Clearing farm activity...", "pending");
+
+    fetch('/clear-farm-activity', {
+        method: 'POST'
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === "success") showToast(data.message, "success");
+        else showToast(data.message, "failed");
+    })
+    .catch(err => {
+        showToast("Error occurred!", "failed");
+    });
+});
+</script>
+
+  <script>
+    const toggleBtn = document.querySelector('.toggle-btn');
+    const sidebar = document.querySelector('.sidebar');
+
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+
+    function showToast(message, type='success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.classList.add('toast', type);
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => { toast.remove(); }, 4000);
+    }
+
+    const form = document.getElementById('main-data-form');
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      showToast("Updating...", "pending");
+
+      const formData = new FormData(form);
+      fetch('/update-main-db', {
+        method: 'POST',
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        if(data.status === "success") showToast(data.message, "success");
+        else showToast(data.message, "failed");
+      })
+      .catch(err => {
+        showToast("Error occurred!", "failed");
+      });
+    });
+  </script>
+<script>
+function submitLinks() {
+  const start = parseInt(document.getElementById("startId").value);
+  const end = parseInt(document.getElementById("endId").value);
+  const field = document.getElementById("linkType").value;
+  const links = document.getElementById("linksInput").value
+    .split("\n")
+    .map(l => l.trim())
+    .filter(l => l !== "");
+
+  const count = end - start + 1;
+  if (links.length !== count) {
+    showToast(`⌐ You entered ${links.length} links, but range requires ${count}.`, "failed");
+    return;
+  }
+
+  // Build records
+  const records = [];
+  for (let i = 0; i < links.length; i++) {
+    records.push({
+      id: start + i,
+      original_link: field === "original_link" ? links[i] : "",
+      site1: field === "site1" ? links[i] : "",
+      site2: field === "site2" ? links[i] : "",
+      site3: field === "site3" ? links[i] : "",
+      site4: field === "site4" ? links[i] : ""
+    });
+  }
+
+  showToast("⳹ Uploading links...", "pending");
+
+  fetch("/upload-links", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      site_key: field,   // ✅ FIXED
+      records: records
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === "success") {
+      showToast(data.message, "success");
+      document.getElementById("linksInput").value = ""; // clear textarea
+    } else {
+      showToast(data.message, "failed");
+    }
+  })
+  .catch(err => showToast("⌐ Upload failed", "failed"));
+}
+
+</script>
+
+<script>
+// Set today's date as default for shortlink widget
+document.addEventListener('DOMContentLoaded', function() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('shortlink-date').value = today;
+});
+
+// Handle shortlink form submission
+const shortlinkForm = document.getElementById('shortlink-form');
+shortlinkForm.addEventListener('submit', function(e) {
+  e.preventDefault();
+  showToast("Updating shortlink data...", "pending");
+
+  const formData = new FormData(shortlinkForm);
+  
+  fetch('/update-shortlink-db', {
+    method: 'POST',
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    if(data.status === "success") showToast(data.message, "success");
+    else showToast(data.message, "failed");
+  })
+  .catch(err => {
+    showToast("Error occurred!", "failed");
+  });
+});
+</script>
+
+<script>
+// Handle shortlink payments form submission
+document.getElementById('shortlink-payments-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    
+    const site = document.getElementById('payments-site').value;
+    const status = document.getElementById('payments-status').value;
+    const input = document.getElementById('payments-input').value.trim();
+    
+    // Input validation
+    if (!input) {
+        showToast('Please enter payment data or ID', 'failed');
+        return;
+    }
+    
+    if (status !== 'auto') {
+        // For non-auto status, validate ID format
+        if (!/^\d+$/.test(input)) {
+            showToast('Invalid ID format. Please enter a numeric ID', 'failed');
+            return;
+        }
+    } else {
+        // For auto status, validate input has content
+        if (!input.split('\n').some(line => line.trim())) {
+            showToast('Please enter payment data', 'failed');
+            return;
+        }
+    }
+    
+    showToast('Processing payment update...', 'pending');
+    
+    fetch('/update-shortlink-payments', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            site,
+            status,
+            input
+        })
+    })
+    .then(res => {
+        if (!res.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            showToast(data.message, 'success');
+            document.getElementById('payments-input').value = ''; // Clear input on success
+        } else {
+            showToast(data.message, 'failed');
+        }
+    })
+    .catch(err => {
+        showToast('Error updating payments: ' + err.message, 'failed');
+    });
+});
+
+// Add this to help with input handling
+document.getElementById('payments-status').addEventListener('change', function() {
+    const input = document.getElementById('payments-input');
+    if (this.value === 'auto') {
+        input.placeholder = 'Paste payment data here...';
+    } else {
+        input.placeholder = 'Enter payment ID...';
+    }
+});
+</script>
+<script>
+// Replace the existing setupTextareaSync function
+function setupTextareaSync() {
+  const shortlinkTextarea = document.querySelector('.shortlink-widget textarea');
+  const paymentsTextarea = document.querySelector('.shortlink-payments-widget textarea');
+  
+  if (!shortlinkTextarea || !paymentsTextarea) return;
+
+  function syncHeight(sourceTextarea, targetTextarea) {
+    // Don't sync if user is currently resizing the target
+    if (!targetTextarea.matches(':active')) {
+      targetTextarea.style.height = sourceTextarea.style.height;
+    }
+  }
+
+  // Listen for resize on Shortlink Statistics textarea
+  shortlinkTextarea.addEventListener('mousedown', function() {
+    const resizeObserver = new ResizeObserver(() => {
+      syncHeight(shortlinkTextarea, paymentsTextarea);
+    });
+    resizeObserver.observe(shortlinkTextarea);
+    
+    // Cleanup observer when mouse is released
+    document.addEventListener('mouseup', function cleanup() {
+      resizeObserver.disconnect();
+      document.removeEventListener('mouseup', cleanup);
+    });
+  });
+
+  // Listen for resize on Shortlink Payments textarea
+  paymentsTextarea.addEventListener('mousedown', function() {
+    const resizeObserver = new ResizeObserver(() => {
+      syncHeight(paymentsTextarea, shortlinkTextarea);
+    });
+    resizeObserver.observe(paymentsTextarea);
+    
+    // Cleanup observer when mouse is released
+    document.addEventListener('mouseup', function cleanup() {
+      resizeObserver.disconnect();
+      document.removeEventListener('mouseup', cleanup);
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // ...existing DOMContentLoaded code...
+  setupTextareaSync();
+});
+</script>
+
+</body>
+</html>

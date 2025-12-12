@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics | MoneyFarmV10</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+<body>
+  <button class="toggle-btn">☰</button>
+  <aside class="sidebar">
+    <h2>Menu</h2>
+    <ul>
+      <li><a href="/">Dashboard</a></li>
+      <li><a href="payments">Payments</a></li>
+      <li><a href="database">Database</a></li>
+      <li><a href="analytics">Analytics</a></li>
+      <li><a href="resources">Resources</a></li>
+      
+    </ul>
+  </aside>
+
+  <div class="tables-container">
+  <!-- Left Table: Payment History -->
+  <div class="glass-table-section">
+    <div class="table-header">
+      <div class="header-left">
+        <h2>Payment History</h2>
+        <div class="site-selector">
+          <select id="paymentSiteSelect">
+            <option value="all" selected>All Sites</option>
+            <option value="site1">Site 1</option>
+            <option value="site2">Site 2</option>
+            <option value="site3">Site 3</option>
+            <option value="site4">Site 4</option>
+          </select>
+        </div>
+      </div>
+      <!-- Updated Mini Stats Styling -->
+      <div class="mini-stats">
+        <div class="stats-group">
+          <div class="stat-items-row">
+            <div class="stat-item">
+              <i class="fas fa-receipt"></i>
+              <div class="stat-content">
+                <div class="stat-label">Total Payments</div>
+                <div class="stat-value" id="totalPayments">0</div>
+              </div>
+            </div>
+            <div class="stat-item">
+              <i class="fas fa-dollar-sign"></i>
+              <div class="stat-content">
+                <div class="stat-label">Total Amount</div>
+                <div class="stat-value" id="totalAmount">$0.00</div>
+              </div>
+            </div>
+          </div>
+          <button id="updatePayments" class="update-btn">
+            <i class="fas fa-sync-alt"></i> Update Dashboard
+          </button>
+        </div>
+      </div>
+    </div>
+    <table class="glass-table" id="paymentsTable">
+      <thead>
+        <tr>
+          <th data-sort="number">ID ↕</th>
+          <th data-sort="date">Date ↕</th>
+          <th data-sort="string">Status ↕</th>
+          <th data-sort="number">Amount ↕</th>
+          <th data-sort="string">Method ↕</th>
+          <th data-sort="string">Account ↕</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Right Table: Statistics -->
+  <div class="glass-table-section">
+    <div class="table-header">
+      <div class="header-left">
+        <h2>Site Statistics</h2>
+        <div class="site-selector">
+          <select id="statsSiteSelect">
+            <option value="site1">Site 1</option>
+            <option value="site2">Site 2</option>
+            <option value="site3">Site 3</option>
+            <option value="site4">Site 4</option>
+          </select>
+        </div>
+      </div>
+      <!-- Updated Mini Stats Styling for Stats Table -->
+      <div class="mini-stats">
+        <div class="stats-group">
+          <div class="stat-items-row">
+            <div class="stat-item">
+              <i class="fas fa-eye"></i>
+              <div class="stat-content">
+                <div class="stat-label">Total Views</div>
+                <div class="stat-value" id="totalViews">0</div>
+              </div>
+            </div>
+            <div class="stat-item">
+              <i class="fas fa-chart-line"></i>
+              <div class="stat-content">
+                <div class="stat-label">Total Earn</div>
+                <div class="stat-value" id="totalEarn">$0.00</div>
+              </div>
+            </div>
+          </div>
+          <button id="updateStats" class="update-btn">
+            <i class="fas fa-sync-alt"></i> Update Dashboard
+          </button>
+        </div>
+      </div>
+    </div>
+    <table class="glass-table" id="statsTable">
+      <thead>
+        <tr>
+          <th data-sort="date">Date ↕</th>
+          <th data-sort="number">Views ↕</th>
+          <th data-sort="number">Earning ↕</th>
+          <th data-sort="number">CPM ↕</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add toast container -->
+<div id="toast-container"></div>
+
+<style>
+.tables-container {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem;
+  justify-content: space-between;
+  margin-left: 80px;
+}
+
+.glass-table-section {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  height: 650px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Prevent overflow */
+}
+
+.site-selector {
+  margin-bottom: 1.5rem; /* Increased spacing */
+}
+
+/* Table styles */
+.glass-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.glass-table thead tr {
+  width: calc(100% - 8px); /* Account for scrollbar width */
+  display: table;
+  table-layout: fixed;
+}
+
+.glass-table tbody {
+  min-height: 0;
+  overflow-y: auto;
+  flex: 1;
+  display: block;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.05);
+}
+
+.glass-table tbody tr {
+  width: 100%;
+  display: table;
+  table-layout: fixed;
+}
+
+/* Set specific widths for payment table columns */
+#paymentsTable th:nth-child(1), #paymentsTable td:nth-child(1) { width: 10%; } /* ID */
+#paymentsTable th:nth-child(2), #paymentsTable td:nth-child(2) { width: 15%; } /* Date */
+#paymentsTable th:nth-child(3), #paymentsTable td:nth-child(3) { width: 15%; } /* Status */
+#paymentsTable th:nth-child(4), #paymentsTable td:nth-child(4) { width: 15%; } /* Amount */
+#paymentsTable th:nth-child(5), #paymentsTable td:nth-child(5) { width: 15%; } /* Method */
+#paymentsTable th:nth-child(6), #paymentsTable td:nth-child(6) { width: 30%; } /* Account */
+
+/* Set specific widths for stats table columns */
+#statsTable th:nth-child(1), #statsTable td:nth-child(1) { width: 25%; } /* Date */
+#statsTable th:nth-child(2), #statsTable td:nth-child(2) { width: 25%; } /* Views */
+#statsTable th:nth-child(3), #statsTable td:nth-child(3) { width: 25%; } /* Earning */
+#statsTable th:nth-child(4), #statsTable td:nth-child(4) { width: 25%; } /* CPM */
+
+.glass-table th,
+.glass-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-table th {
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  user-select: none;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.glass-table th:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.glass-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Enhanced Select Styling */
+.site-selector select {
+  width: 200px;
+  padding: 0.6rem 1rem;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: rgba(30, 30, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: #dadada;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.site-selector {
+  position: relative;
+}
+
+.site-selector::after {
+  content: '\f078';
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  position: absolute;
+  top: 50%;
+  right: calc(100% - 190px);
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #8AB4F8;
+  opacity: 0.7;
+  transition: 0.2s all;
+}
+
+.site-selector:hover::after {
+  opacity: 1;
+}
+
+.site-selector select:hover {
+  background: rgba(40, 40, 40, 0.95);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.site-selector select:focus {
+  outline: none;
+  background: rgba(45, 45, 45, 0.98);
+  border-color: #8AB4F8;
+  box-shadow: 0 0 10px rgba(138, 180, 248, 0.2);
+}
+
+/* Dropdown options styling */
+.site-selector select option {
+  background: rgba(30, 30, 30, 0.98);
+  color: #dadada;
+  padding: 10px;
+  font-size: 0.95rem;
+}
+
+/* Webkit specific styling for dropdown */
+.site-selector select::-webkit-scrollbar {
+  width: 8px;
+}
+
+.site-selector select::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.site-selector select::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+/* Firefox specific styling */
+@-moz-document url-prefix() {
+  .site-selector select {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.05);
+  }
+}
+
+@media (max-width: 1200px) {
+  .tables-container {
+    flex-direction: column;
+    margin-left: 0; /* Remove margin on mobile */
+  }
+  
+  .glass-table-section {
+    max-height: 450px; /* Reduced height on mobile */
+  }
+}
+
+/* Updated Table Header Layout */
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* Center align items vertically */
+  margin-bottom: 1.5rem;
+  gap: 2rem;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 200px; /* Minimum width for the left side */
+}
+
+.header-left h2 {
+  margin: 0;
+  padding: 0;
+}
+
+/* Updated Mini Stats Styling */
+.mini-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  flex-grow: 0; /* Don't grow */
+  flex-shrink: 0; /* Don't shrink */
+  width: auto; /* Auto width based on content */
+}
+
+.stats-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.stat-items-row {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  width: auto; /* Let content determine width */
+}
+
+.stat-item {
+  flex: 1;
+  min-width: 140px; /* Minimum width for each stat item */
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.stat-item i {
+  font-size: 1.2rem;
+  color: #8AB4F8;
+  opacity: 0.9;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.update-btn {
+  width: 100%;
+  justify-content: center;
+  margin-left: 0;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  background: rgba(138, 180, 248, 0.2);
+  border: 1px solid #8AB4F8;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.update-btn:hover {
+  background: rgba(138, 180, 248, 0.3);
+  transform: translateY(-1px);
+}
+
+.update-btn i {
+  font-size: 0.9rem;
+}
+
+/* Toast Notification Styles */
+#toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+}
+
+.toast {
+  min-width: 200px;
+  margin-bottom: 10px;
+  padding: 1rem 1.2rem;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  opacity: 0;
+  transform: translateX(100%);
+  animation: slideIn 0.5s forwards, fadeOut 0.5s forwards 3s;
+}
+
+.toast.success { background-color: #28a745; }
+.toast.pending { background-color: #ffc107; color: #333; }
+.toast.failed  { background-color: #dc3545; }
+
+@keyframes slideIn {
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeOut {
+  to { opacity: 0; transform: translateX(100%); }
+}
+</style>
+
+<script>
+// Table Data Management
+let currentPaymentSortField = 'id';
+let currentStatsSortField = 'Date';
+let isPaymentAscending = false;
+let isStatsAscending = false;
+
+// Fetch and populate tables
+async function fetchTableData() {
+  try {
+    //showToast("Fetching data...", "pending");
+    const [paymentsRes, statsRes] = await Promise.all([
+      fetch('/get-shortlink-payments'),
+      fetch('/get-shortlink-stats')
+    ]);
+    
+    if (!paymentsRes.ok || !statsRes.ok) {
+      throw new Error('Failed to fetch data');
+    }
+    
+    const paymentsData = await paymentsRes.json();
+    const statsData = await statsRes.json();
+    
+    updateTables(paymentsData, statsData);
+    //showToast("Data updated successfully", "success");
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    showToast("Failed to fetch data: " + error.message, "failed");
+  }
+}
+
+function updateTables(paymentsData, statsData) {
+  const paymentSite = document.getElementById('paymentSiteSelect').value;
+  const statsSite = document.getElementById('statsSiteSelect').value;
+  
+  // Handle 'all' selection for payments
+  let paymentsToShow = [];
+  if (paymentSite === 'all') {
+    Object.values(paymentsData).forEach(sitePayments => {
+      if (Array.isArray(sitePayments)) {
+        paymentsToShow = paymentsToShow.concat(sitePayments);
+      }
+    });
+  } else {
+    paymentsToShow = paymentsData[paymentSite] || [];
+  }
+  
+  renderPaymentsTable(paymentsToShow);
+  renderStatsTable(statsData[statsSite] || []);
+}
+
+function renderPaymentsTable(data) {
+  const tbody = document.querySelector('#paymentsTable tbody');
+  tbody.innerHTML = '';
+  
+  const sortedData = sortData(data, currentPaymentSortField, isPaymentAscending);
+  
+  // Calculate totals
+  const totalPayments = sortedData.length;
+  const totalAmount = sortedData.reduce((sum, item) => sum + parseFloat(item.amount), 0);
+  
+  // Update mini stats
+  document.getElementById('totalPayments').textContent = totalPayments;
+  document.getElementById('totalAmount').textContent = `$${totalAmount.toFixed(2)}`;
+  
+  sortedData.forEach(item => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${item.id}</td>
+      <td>${item.date}</td>
+      <td>${item.status}</td>
+      <td>$${Number(item.amount).toFixed(4)}</td>
+      <td>${item.w_method}</td>
+      <td>${item.w_account}</td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function renderStatsTable(data) {
+  const tbody = document.querySelector('#statsTable tbody');
+  tbody.innerHTML = '';
+  
+  const sortedData = sortData(data, currentStatsSortField, isStatsAscending);
+  
+  // Calculate totals
+  const totalViews = sortedData.reduce((sum, item) => sum + item.Views, 0);
+  const totalEarn = sortedData.reduce((sum, item) => sum + item.Earning, 0);
+  
+  // Update mini stats
+  document.getElementById('totalViews').textContent = totalViews.toLocaleString();
+  document.getElementById('totalEarn').textContent = `$${totalEarn.toFixed(2)}`;
+  
+  sortedData.forEach(item => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${item.Date}</td>
+      <td>${item.Views}</td>
+      <td>$${Number(item.Earning).toFixed(4)}</td>
+      <td>${Number(item.CPM).toFixed(4)}</td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function sortData(data, field, ascending) {
+  return [...data].sort((a, b) => {
+    let valueA = a[field];
+    let valueB = b[field];
+    
+    // Handle different data types
+    if (field === 'date' || field === 'Date') {
+      valueA = new Date(valueA);
+      valueB = new Date(valueB);
+    } else if (field === 'amount') {
+      // Remove '$' and convert to float for amount comparison
+      valueA = parseFloat(valueA.replace('$', ''));
+      valueB = parseFloat(valueB.replace('$', ''));
+    } else if (typeof valueA === 'number') {
+      valueA = Number(valueA);
+      valueB = Number(valueB);
+    } else {
+      valueA = String(valueA).toLowerCase();
+      valueB = String(valueB).toLowerCase();
+    }
+    
+    if (valueA < valueB) return ascending ? -1 : 1;
+    if (valueA > valueB) return ascending ? 1 : -1;
+    return 0;
+  });
+}
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+  fetchTableData();
+  
+  // Site selection change handlers
+  document.getElementById('paymentSiteSelect').addEventListener('change', fetchTableData);
+  document.getElementById('statsSiteSelect').addEventListener('change', fetchTableData);
+  
+  // Sort handlers for payment table
+  document.querySelectorAll('#paymentsTable th').forEach(th => {
+    th.addEventListener('click', () => {
+      const field = th.textContent.toLowerCase().split(' ')[0];
+      if (currentPaymentSortField === field) {
+        isPaymentAscending = !isPaymentAscending;
+      } else {
+        currentPaymentSortField = field;
+        isPaymentAscending = true;
+      }
+      fetchTableData();
+    });
+  });
+  
+  // Sort handlers for stats table
+  document.querySelectorAll('#statsTable th').forEach(th => {
+    th.addEventListener('click', () => {
+      const field = th.textContent.split(' ')[0];
+      if (currentStatsSortField === field) {
+        isStatsAscending = !isStatsAscending;
+      } else {
+        currentStatsSortField = field;
+        isStatsAscending = true;
+      }
+      fetchTableData();
+    });
+  });
+});
+
+// Refresh data every 30 seconds
+setInterval(fetchTableData, 30000);
+
+async function updatePaymentsDashboard() {
+  try {
+    showToast("Updating payments dashboard...", "pending");
+    const paymentsRes = await fetch('/get-shortlink-payments');
+    const paymentsData = await paymentsRes.json();
+    
+    let totalConfirmedAmount = 0;
+    let totalAmount = 0;
+    
+    Object.values(paymentsData).forEach(sitePayments => {
+      if (Array.isArray(sitePayments)) {
+        sitePayments.forEach(payment => {
+          const amount = parseFloat(payment.amount);
+          if (payment.status === 'Completed' || payment.status === 'Successful') {
+            totalConfirmedAmount += amount;
+          }
+          totalAmount += amount;
+        });
+      }
+    });
+
+    // Get current Sri Lanka time
+    const slTime = new Date().toLocaleString('en-US', {
+      timeZone: 'Asia/Colombo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).replace(',', '');
+
+    const updateData = {
+      earn_at_conf: totalConfirmedAmount,
+      earn_at: totalAmount,
+      lastconf_update: slTime
+    };
+
+    await updateDashboardData(updateData);
+    showToast("Payments dashboard updated successfully", "success");
+  } catch (error) {
+    showToast('Failed to update payments: ' + error.message, "failed");
+  }
+}
+
+async function updateStatsDashboard() {
+  try {
+    showToast("Updating stats dashboard...", "pending");
+    const statsRes = await fetch('/get-shortlink-stats');
+    const statsData = await statsRes.json();
+    
+    let totalViews = 0;
+    let totalConfirmedViews = 0;
+    const cpmBysite = {site1: '0', site2: '0', site3: '0', site4: '0'};
+    
+    // Calculate totals from all sites
+    Object.entries(statsData).forEach(([site, data]) => {
+      if (Array.isArray(data) && data.length > 0) {
+        // Get today's data for CPM
+        const today = new Date().toISOString().split('T')[0];
+        const todayRecord = data.find(record => record.Date === today);
+        if (todayRecord && todayRecord.CPM > 0) {
+          cpmBysite[site] = todayRecord.CPM.toFixed(3);
+        }
+        
+        // Sum up total views and confirmed views
+        data.forEach(record => {
+          if (record.Views) {
+            totalViews += record.Views;
+            totalConfirmedViews += record.Views;
+          }
+        });
+      }
+    });
+    
+    // Format CPM string
+    const cpmString = `${cpmBysite.site1} | ${cpmBysite.site2} <br> ${cpmBysite.site3} | ${cpmBysite.site4}`;
+
+    // Get current Sri Lanka time
+    const slTime = new Date().toLocaleString('en-US', {
+      timeZone: 'Asia/Colombo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).replace(',', '');
+
+    const updateData = {
+      views_at: totalViews,
+      views_at_conf: totalConfirmedViews,
+      cpm: cpmString,
+      lastconf_update: slTime
+    };
+
+    const response = await fetch('/update-main-db', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updateData)
+    });
+    
+    const result = await response.json();
+    if (result.status === 'success') {
+      showToast("Stats dashboard updated successfully", "success");
+    } else {
+      throw new Error(result.message);
+    }
+  } catch (error) {
+    showToast('Failed to update stats: ' + error.message, "failed");
+  }
+}
+
+async function updateDashboardData(data) {
+  const response = await fetch('/update-main-db', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+  });
+  
+  const result = await response.json();
+  if (result.status !== 'success') {
+    throw new Error(result.message);
+  }
+  return result;
+}
+
+// Add toast function
+function showToast(message, type='success') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.classList.add('toast', type);
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => { toast.remove(); }, 4000);
+}
+
+// Update event listeners
+document.getElementById('updatePayments').addEventListener('click', updatePaymentsDashboard);
+document.getElementById('updateStats').addEventListener('click', updateStatsDashboard);
+</script>
+  <script>
+    const toggleBtn = document.querySelector('.toggle-btn');
+    const sidebar = document.querySelector('.sidebar');
+
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+  <button class="toggle-btn">☰</button>
+  <aside class="sidebar">
+    <h2>Menu</h2>
+    <ul>
+      <li><a href="/">Dashboard</a></li>
+      <li><a href="payments">Payments</a></li>
+      <li><a href="database">Database</a></li>
+      <li><a href="analytics">Analytics</a></li>
+      <li><a href="resources">Resources</a></li>
+    </ul>
+  </aside>
+<div class="glass-section">
+  <div class="time-toggle">
+    <button class="toggle-option active" data-mode="at">
+      <i class="fa-solid fa-calendar-days"></i> All time
+    </button>
+    <button class="toggle-option" data-mode="td">
+      <i class="fa-solid fa-clock"></i> Today
+    </button>
+  </div>
+  <!-- Store all values as HTML data-* (no JSON, no conflicts) -->
+  <div id="stats"
+       data-views-td="{{ stats.views_td }}"
+       data-views-at="{{ stats.views_at }}"
+       data-views-td-conf="{{ stats.views_td_conf }}"
+       data-views-at-conf="{{ stats.views_at_conf }}"
+       data-earn-td="{{ stats.earn_td }}"
+       data-earn-at="{{ stats.earn_at }}"
+       data-earn-td-conf="{{ stats.earn_td_conf }}"
+       data-earn-at-conf="{{ stats.earn_at_conf }}"
+       data-cpm="{{ stats.cpm }}"
+       data-lastconf_update="{{ stats.lastconf_update }}">
+  </div>
+
+  <div class="main">
+    <!-- Widget 1: Total Views -->
+    <div class="glass-card">
+      <div class="card-info">
+        <div class="title">Total Views</div>
+        <div class="main-number" id="views">{{ stats.views_at }}</div>
+        <div class="percent"><i>Confirmed Views: </i> <span id="views_conf">{{ stats.views_at_conf }}</span></div>
+      </div>
+      <div class="card-icon"><i class="fa-solid fa-eye"></i></div>
+    </div>
+
+    <!-- Widget 2: CPM -->
+    <div class="glass-card">
+      <div class="card-info">
+        <div class="title">Total CPM</div>
+        <div class="main-number" id="cpm">
+          6.532 | 7.231 <br>
+          5.213 | 8.124
+        </div>
+      </div>
+      <div class="card-icon"><i class="fa-solid fa-rotate"></i></div>
+    </div>
+
+    <!-- Widget 3: Earnings -->
+    <div class="glass-card">
+      <div class="card-info">
+        <div class="title">Total Earn</div>
+        <div class="main-number">$ <span id="earn">{{ "%.2f"|format(stats.earn_at) }}</span></div>
+        <div class="percent"><i>Confirmed Earn: </i> $ <span id="earn_conf">{{ "%.2f"|format(stats.earn_at_conf) }}</span></div>
+      </div>
+      <div class="card-icon"><i class="fa-solid fa-dollar-sign"></i></div>
+    </div>
+
+    <!-- Widget 4: Farm Stat -->
+    <div class="glass-card">
+      <div class="card-info">
+        <div class="title">Farm Stat</div>
+        <div class="main-number" id="runningfarm"></div>
+      </div>
+      <div  id="runningfarmicon"><i class="fa-solid fa-tractor"></i></div>
+    </div>
+
+<div class="lastconup ">Last Confirmed Updated : <b> <span  id="lastconf_update">2025/08/31 | 19:44 </span></b></div>
+</div>
+</div>
+<div class="glass-tables-row">
+  <div class="glass-table-left">
+    <!-- Second table (Status Table) -->
+<div id="farmstats" 
+     data-json='{{ farmstats | tojson | safe }}'>
+</div>
+
+    <div class="glass-table-section">
+      <div class="search-container">
+        <input type="text" id="searchInput2" placeholder=" Search..." />
+      </div>
+      <table class="glass-table">
+        <thead>
+          <tr>
+            <th>Farm ID</th>
+            <th>Status</th>
+            <th>Views</th>
+            <th>Last Response</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody2">
+        </tbody>
+      </table>
+      <div class="pagination">
+        <button id="prevBtn2">Prev</button>
+        <span id="pageInfo2">1-10</span>
+        <button id="nextBtn2">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="glass-table-right">
+    <!-- First table (Details Table) -->
+    <div class="glass-table-section">
+      <div class="search-container">
+        <input type="text" id="searchInput" placeholder=" Search..." />
+      </div>
+      <table class="glass-table">
+        <thead>
+          <tr>
+            <th>Farm</th>
+            <th>Country</th>
+            <th>IP Address</th>
+            <th>Duration</th>
+            <th>Sites</th>
+            <th>Completed</th>
+            <th>Fingerprint ID</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+      </table>
+      <div class="pagination">
+        <button id="prevBtn">Prev</button>
+        <span id="pageInfo">1-15</span>
+        <button id="nextBtn">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Analytics Widgets Row -->
+<div class="analytics-row">
+  <!-- Left Widget: Analytics Information -->
+  <div class="analytics-left">
+    <div class="analytics-widget">
+      <div class="widget-title">
+        <i class="fa-solid fa-chart-line"></i> Site Analytics
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Failed Sites (<3/4):</span>
+        <span class="stat-value failed" id="failed-sites">0</span>
+      </div>
+
+      <div class="stat-item">
+        <span class="stat-label">Business Connections:</span>
+        <span class="stat-value business" id="business-conn">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Residential Connections:</span>
+        <span class="stat-value residential" id="residential-conn">0</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Wireless Connections:</span>
+        <span class="stat-value wireless" id="wireless-conn">0</span>
+      </div>
+      
+
+      <!-- Duplicate IPs Section -->
+      <div style="margin-top: 1rem;">
+        <div class="stat-label" style="margin-bottom: 0.5rem;">
+          Duplicate IPs: <span class="duplicate-count" id="duplicate-ips-count">0</span>
+        </div>
+        <div class="duplicate-section" id="duplicate-ips-list">
+          <!-- Will be populated by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Duplicate Fingerprints Section -->
+      <div style="margin-top: 1rem;">
+        <div class="stat-label" style="margin-bottom: 0.5rem;">
+          Duplicate Fingerprints: <span class="duplicate-count" id="duplicate-fingerprints-count">0</span>
+        </div>
+        <div class="duplicate-section" id="duplicate-fingerprints-list">
+          <!-- Will be populated by JavaScript -->
+        </div>
+      </div>      
+    </div>
+  </div>
+
+  <!-- Center Widget: Country Usage -->
+  <div class="analytics-center">
+    <div class="analytics-widget">
+      <div class="widget-title">
+        <i class="fa-solid fa-globe"></i> Country Usage
+      </div>
+      <div class="pie-container">
+        <canvas id="countryChart" width="300" height="300"></canvas>
+      </div>
+      <div class="country-list" id="country-list">
+        <!-- Countries will be populated by JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Widget: Farm Control Panel -->
+  <div class="analytics-right">
+    <div class="analytics-widget">
+      <div class="widget-title">
+        <i class="fa-solid fa-sliders"></i> Control Panel
+      </div>
+      <table class="control-table">
+        <thead>
+          <tr>
+            <th>Farm ID</th>
+            <th>Functions</th>
+            <th>Response</th>
+          </tr>
+        </thead>
+        <tbody id="control-body">
+          <tr>
+            <td>Farm1</td>
+            <td>
+              <div class="control-buttons">
+                <button class="control-btn reset" onclick="farmAction('Farm1', 'Reset')">
+                  <i class="fa-solid fa-refresh"></i> Reset
+                </button>
+                <button class="control-btn kill" onclick="farmAction('Farm1', 'Kill')">
+                  <i class="fa-solid fa-stop"></i> Kill
+                </button>
+                <button class="control-btn misc" onclick="farmAction('Farm1', 'Misc')">
+                  <i class="fa-solid fa-cogs"></i> Misc
+                </button>
+              </div>
+            </td>
+            <td><span class="farm-status running">Running</span></td>
+          </tr>
+          <tr>
+            <td>Farm2</td>
+            <td>
+              <div class="control-buttons">
+                <button class="control-btn reset" onclick="farmAction('Farm2', 'Reset')">
+                  <i class="fa-solid fa-refresh"></i> Reset
+                </button>
+                <button class="control-btn kill" onclick="farmAction('Farm2', 'Kill')">
+                  <i class="fa-solid fa-stop"></i> Kill
+                </button>
+                <button class="control-btn misc" onclick="farmAction('Farm2', 'Misc')">
+                  <i class="fa-solid fa-cogs"></i> Misc
+                </button>
+              </div>
+            </td>
+            <td><span class="farm-status running">Running</span></td>
+          </tr>
+          <tr>
+            <td>Farm3</td>
+            <td>
+              <div class="control-buttons">
+                <button class="control-btn reset" onclick="farmAction('Farm3', 'Reset')">
+                  <i class="fa-solid fa-refresh"></i> Reset
+                </button>
+                <button class="control-btn kill" onclick="farmAction('Farm3', 'Kill')">
+                  <i class="fa-solid fa-stop"></i> Kill
+                </button>
+                <button class="control-btn misc" onclick="farmAction('Farm3', 'Misc')">
+                  <i class="fa-solid fa-cogs"></i> Misc
+                </button>
+              </div>
+            </td>
+            <td><span class="farm-status stopped">Stopped</span></td>
+          </tr>
+          <tr>
+            <td>Farm4</td>
+            <td>
+              <div class="control-buttons">
+                <button class="control-btn reset" onclick="farmAction('Farm4', 'Reset')">
+                  <i class="fa-solid fa-refresh"></i> Reset
+                </button>
+                <button class="control-btn kill" onclick="farmAction('Farm4', 'Kill')">
+                  <i class="fa-solid fa-stop"></i> Kill
+                </button>
+                <button class="control-btn misc" onclick="farmAction('Farm4', 'Misc')">
+                  <i class="fa-solid fa-cogs"></i> Misc
+                </button>
+              </div>
+            </td>
+            <td><span class="farm-status running">Running</span></td>
+          </tr>
+          <tr>
+            <td>Farm5</td>
+            <td>
+              <div class="control-buttons">
+                <button class="control-btn reset" onclick="farmAction('Farm5', 'Reset')">
+                  <i class="fa-solid fa-refresh"></i> Reset
+                </button>
+                <button class="control-btn kill" onclick="farmAction('Farm5', 'Kill')">
+                  <i class="fa-solid fa-stop"></i> Kill
+                </button>
+                <button class="control-btn misc" onclick="farmAction('Farm5', 'Misc')">
+                  <i class="fa-solid fa-cogs"></i> Misc
+                </button>
+              </div>
+            </td>
+            <td><span class="farm-status running">Running</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// Global variables for analytics and data
+let allFarmData = []; // Store all farm activity data
+let currentMode = 'at'; // default all-time
+let countryChart = null;
+
+// Utility function to get today's date in YYYY-MM-DD format
+function getTodayDate() {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+}
+
+
+
+// Fixed function to filter data based on current mode - using 'time' field
+function filterDataByMode(data) {
+  if (currentMode === 'td') {
+    const today = getTodayDate();
+    return data.filter(item => {
+      if (!item.time) return false;
+      const itemDate = item.time.split(' ')[0]; // Extract date part
+      return itemDate === today;
+    });
+  }
+  return data; // Return all data for 'at' mode
+}
+
+// Fixed function to calculate time gaps between same farms - using 'time' field
+function calculateTimeGaps(data) {
+  // Group data by farm ID
+  const farmGroups = {};
+  data.forEach(item => {
+    if (!farmGroups[item.farm]) {
+      farmGroups[item.farm] = [];
+    }
+    farmGroups[item.farm].push(item);
+  });
+  
+  // Sort each farm's data chronologically and calculate gaps
+  Object.keys(farmGroups).forEach(farmId => {
+    const farmData = farmGroups[farmId].sort((a, b) => 
+      new Date(b.time) - new Date(a.time) // Newest first (reverse chronological for display)
+    );
+    
+    // Calculate gaps between consecutive entries
+    for (let i = 0; i < farmData.length; i++) {
+      if (i < farmData.length - 1) {
+        const currentTime = new Date(farmData[i].time);
+        const prevTime = new Date(farmData[i + 1].time);
+        const diffMs = currentTime - prevTime;
+        
+        if (diffMs > 0) {
+          const diffMinutes = Math.floor(diffMs / (1000 * 60));
+          const diffSeconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+          
+          let timeGap = '';
+          if (diffMinutes > 0) {
+            timeGap = ` (${diffMinutes}m${diffSeconds}s)`;
+          } else {
+            timeGap = ` (${diffSeconds}s)`;
+          }
+          
+          farmData[i].timeWithGap = farmData[i].time + timeGap;
+        } else {
+          farmData[i].timeWithGap = farmData[i].time;
+        }
+      } else {
+        // First/oldest entry for this farm (no previous entry to compare)
+        farmData[i].timeWithGap = farmData[i].time;
+      }
+    }
+  });
+  
+  return data.map(item => ({
+    ...item,
+    timeWithGap: item.timeWithGap || item.time
+  }));
+}
+// Analytics functions
+async function fetchAnalytics() {
+  try {
+    const response = await fetch('/get-analytics');
+    const data = await response.json();
+    
+    // Filter analytics data based on current mode
+    const filteredFarmData = filterDataByMode(allFarmData);
+    const analyticsData = calculateAnalyticsFromData(filteredFarmData);
+    
+    updateAnalyticsWidgets(analyticsData);
+  } catch (error) {
+    console.error('Error fetching analytics:', error);
+  }
+}
+
+// Calculate analytics from filtered data
+function calculateAnalyticsFromData(data) {
+  // Failed Sites Analysis - sites that don't have exactly "3 | 4"
+  let failed_sites = 0;
+  const ips = [];
+  const fingerprints = [];
+  const countries = [];
+  const connection_types = {
+    "Business": 0,
+    "Residential": 0,
+    "Wireless": 0
+  };
+
+  data.forEach(record => {
+    // Failed sites
+    if (record.sites !== "3 | 4") {
+      failed_sites++;
+    }
+    
+    // Collect IPs and fingerprints
+    if (record.ip) ips.push(record.ip);
+    if (record.fingerprint) fingerprints.push(record.fingerprint);
+    if (record.country) countries.push(record.country);
+    
+    // Connection types
+    if (record.duration && connection_types.hasOwnProperty(record.duration)) {
+      connection_types[record.duration]++;
+    }
+  });
+
+  // Count duplicates
+  const ip_counts = {};
+  const fingerprint_counts = {};
+  const country_counts = {};
+  
+  ips.forEach(ip => ip_counts[ip] = (ip_counts[ip] || 0) + 1);
+  fingerprints.forEach(fp => fingerprint_counts[fp] = (fingerprint_counts[fp] || 0) + 1);
+  countries.forEach(country => country_counts[country] = (country_counts[country] || 0) + 1);
+  
+  const duplicate_ips = Object.fromEntries(Object.entries(ip_counts).filter(([_, count]) => count > 1));
+  const duplicate_fingerprints = Object.fromEntries(Object.entries(fingerprint_counts).filter(([_, count]) => count > 1));
+
+  return {
+    failed_sites,
+    duplicate_ips,
+    duplicate_fingerprints,
+    connection_types,
+    country_usage: country_counts
+  };
+}
+
+function updateAnalyticsWidgets(data) {
+  // Update left widget stats
+  document.getElementById('failed-sites').textContent = data.failed_sites;
+  document.getElementById('business-conn').textContent = data.connection_types.Business;
+  document.getElementById('residential-conn').textContent = data.connection_types.Residential;
+  document.getElementById('wireless-conn').textContent = data.connection_types.Wireless;
+
+  // Render duplicates
+  renderDuplicates(data.duplicate_ips, "duplicate-ips-count", "duplicate-ips-list");
+  renderDuplicates(data.duplicate_fingerprints, "duplicate-fingerprints-count", "duplicate-fingerprints-list");
+  
+  // Update country chart
+  updateCountryChart(data.country_usage);
+}
+
+// Function to render duplicates list
+function renderDuplicates(data, countId, listId) {
+  const countSpan = document.getElementById(countId);
+  const listDiv = document.getElementById(listId);
+
+  // Count total items
+  countSpan.textContent = Object.keys(data).length;
+
+  // Clear before adding
+  listDiv.innerHTML = "";
+
+  // Add each item
+  for (const [key, value] of Object.entries(data)) {
+    const item = document.createElement("div");
+    item.style.margin = "3px 0";
+    item.innerHTML = `${key} <strong>(${value})</strong>`;
+    listDiv.appendChild(item);
+  }
+}
+
+// Generate dynamic colors using HSL
+function generateColors(count) {
+  const colors = [];
+  for (let i = 0; i < count; i++) {
+    const hue = (i * 137.508) % 360; // Golden angle for distinct hues
+    colors.push(`hsl(${hue}, 65%, 55%)`);
+  }
+  return colors;
+}
+
+function updateCountryChart(countryData) {
+  const ctx = document.getElementById('countryChart').getContext('2d');
+  
+  if (countryChart) {
+    countryChart.destroy();
+  }
+
+  // Sort countries by amount (high → low)
+  const sorted = Object.entries(countryData).sort((a, b) => b[1] - a[1]);
+  const countries = sorted.map(item => item[0]);
+  const counts = sorted.map(item => item[1]);
+
+  // Dynamic color palette
+  const colors = generateColors(countries.length);
+
+  // Modern Doughnut chart with cutout center
+  countryChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: countries,
+      datasets: [{
+        data: counts,
+        backgroundColor: colors,
+        borderColor: "#ffffff55",
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: "65%", // Stylish donut look
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: "#333",
+          titleColor: "#fff",
+          bodyColor: "#ddd",
+          borderColor: "#555",
+          borderWidth: 1
+        }
+      }
+    }
+  });
+
+  // Update country list (sorted, with matching colors)
+  const countryList = document.getElementById('country-list');
+  countryList.innerHTML = countries.map((country, index) => `
+    <div class="country-item">
+      <div class="country-name">
+        <div class="country-color" style="background-color: ${colors[index]};"></div>
+        <span class="country-amount">${country}</span>
+      </div>
+      <span><b>${counts[index]}</b></span>
+    </div>
+  `).join('');
+}
+
+// Farm control functions
+async function farmAction(farmId, action) {
+  try {
+    const response = await fetch('/farm-action', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        farm_id: farmId,
+        action: action
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      console.log(`${action} executed successfully for ${farmId}`);
+      updateFarmStatus(farmId, action);
+    }
+  } catch (error) {
+    console.error('Error executing farm action:', error);
+  }
+}
+
+function updateFarmStatus(farmId, action) {
+  const statusElement = document.querySelector(`#control-body tr:has(td:contains('${farmId}')) .farm-status`);
+  if (statusElement) {
+    if (action === 'Kill') {
+      statusElement.className = 'farm-status stopped';
+      statusElement.textContent = 'Stopped';
+    } else if (action === 'Reset') {
+      statusElement.className = 'farm-status running';
+      statusElement.textContent = 'Running';
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleButtons = document.querySelectorAll('.toggle-option');
+    const viewsEl = document.getElementById('views');
+    const viewsConfEl = document.getElementById('views_conf');
+    const earnEl = document.getElementById('earn');
+    const earnConfEl = document.getElementById('earn_conf');
+    const cpmEl = document.getElementById('cpm');
+    const lastconfEl = document.getElementById('lastconf_update');
+    const tbody2 = document.getElementById('tableBody2');
+
+    // helper: get farm status
+    function getStatus(lastRes) {
+        if (!lastRes) return "Offline";
+        const lastTime = new Date(lastRes);
+        const nowSL = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Colombo" }));
+        const diffMin = (nowSL - lastTime) / 1000 / 60;
+        return diffMin <= 20 ? "Online" : "Offline";
+    }
+
+    function setModeAndRender(data) {
+        const stats = data.stats;
+        const farmData = data.farmstats;
+
+        // Top widgets
+        if (currentMode === 'td') {
+            viewsEl.textContent = stats.views_td;
+            viewsConfEl.textContent = stats.views_td_conf;
+            earnEl.textContent = Number(stats.earn_td).toFixed(2);
+            earnConfEl.textContent = Number(stats.earn_td_conf).toFixed(2);
+        } else {
+            viewsEl.textContent = stats.views_at;
+            viewsConfEl.textContent = stats.views_at_conf;
+            earnEl.textContent = Number(stats.earn_at).toFixed(2);
+            earnConfEl.textContent = Number(stats.earn_at_conf).toFixed(2);
+        }
+        cpmEl.innerHTML = stats.cpm;
+        lastconfEl.textContent = stats.lastconf_update;
+
+        // Farm table & calculate online/offline
+        let onlineCount = 0;
+        tbody2.innerHTML = farmData.map(farm => {
+            const views = currentMode === 'td' ? farm.views_td : farm.views_at;
+            const status = getStatus(farm.lastres);
+            if (status === "Online") onlineCount++;
+            return `
+                <tr>
+                    <td>${farm.farm}</td>
+                    <td class="${status === 'Online' ? 'status-online' : 'status-offline'}">
+                        ${status} <i class="fa-solid ${status === 'Online' ? 'fa-thumbs-up' : 'fa-thumbs-down'}"></i>
+                    </td>
+                    <td>${views}</td>
+                    <td>${farm.lastres}</td>
+                </tr>
+            `;
+        }).join('');
+
+        // Update runningfarm widget
+        const totalFarms = farmData.length;
+        document.getElementById('runningfarm').textContent = `${onlineCount}/${totalFarms}`;
+        // Change page title
+        document.title = `${onlineCount}/${totalFarms} | MoneyFarm V10`;
+
+        // Change favicon
+        const favicon = document.querySelector("link[rel~='icon']") || document.createElement("link");
+        favicon.rel = "icon";
+
+        // if all farms are running
+        if (onlineCount === totalFarms) {
+            favicon.href = "/static/images/mark.png";   // ✅ use a "success" icon
+        } else {
+            favicon.href = "/static/images/close.png";     // ⚠️ use a "warning/error" icon
+        }
+
+        document.head.appendChild(favicon);
+
+
+
+        // Update runningfarmicon glow
+        const farmIcon = document.getElementById('runningfarmicon');
+        if (onlineCount === totalFarms && totalFarms > 0) {
+            farmIcon.style.animationName = "glow_online";
+            farmIcon.style.color = "#00ff08";
+        } else {
+            farmIcon.style.animationName = "glow_offline";
+            farmIcon.style.color = "#ff0000";
+        }
+        farmIcon.style.animationDuration = "1s";
+        farmIcon.style.animationIterationCount = "infinite";
+        farmIcon.style.animationDirection = "alternate";
+    }
+
+    // fetch data from server
+    async function fetchAndUpdate() {
+        try {
+            const res = await fetch('/get-stats');
+            const data = await res.json();
+            setModeAndRender(data);
+        } catch (err) {
+            console.error("Error fetching stats:", err);
+        }
+    }
+
+    // initial load
+    fetchAndUpdate();
+    fetchAnalytics(); // Load analytics
+
+    // update every 10 seconds
+    setInterval(fetchAndUpdate, 10000);
+    setInterval(fetchAnalytics, 15000); // Update analytics every 15 seconds
+
+    // toggle buttons
+    toggleButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            toggleButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentMode = btn.dataset.mode === 'td' ? 'td' : 'at';
+            fetchAndUpdate(); // immediately refresh on toggle
+            fetchAnalytics(); // Update analytics with new mode
+            renderFarmActivity(); // Update first table with new mode
+        });
+    });
+});
+
+// First table (Farm Activity) functions
+const rowsPerPage = 10;
+let currentPage = 0;
+const tbody = document.getElementById('tableBody');
+const searchInput = document.getElementById('searchInput');
+const pageInfo = document.getElementById('pageInfo');
+
+// Fetch farm activity data
+async function get_farm_activity() {
+  try {
+    const response = await fetch('/get-farm-activity');
+    allFarmData = await response.json();
+    renderFarmActivity();
+  } catch (error) {
+    console.error('Error fetching farm activity:', error);
+  }
+}
+
+function renderFarmActivity() {
+  const query = searchInput.value.toLowerCase();
+  
+  // Filter data based on current mode
+  let dataToShow = filterDataByMode(allFarmData);
+  
+  // Add time gaps - THIS IS WHERE THE MAGIC HAPPENS
+  dataToShow = calculateTimeGaps(dataToShow);
+  
+  // Apply search filter
+  const filtered = dataToShow.filter(item =>
+    Object.values(item).some(val => String(val).toLowerCase().includes(query))
+  );
+
+  const total = filtered.length;
+  const start = currentPage * rowsPerPage;
+  const paginated = filtered.slice(start, start + rowsPerPage);
+
+  tbody.innerHTML = paginated.map(item => `
+    <tr>
+      <td>${item.farm}</td>
+      <td>${item.country}</td>
+      <td>${item.ip}</td>
+      <td>${item.duration}</td>
+      <td>${item.sites}</td>
+      <td>${item.timeWithGap}</td>  <!-- Using timeWithGap here -->
+      <td>${item.fingerprint}</td>
+    </tr>`).join('');
+
+  if (total === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;opacity:0.7;">No results found</td></tr>`;
+  }
+
+  pageInfo.textContent = total > 0 ? `${start + 1}-${start + paginated.length} of ${total}` : "0 results";
+  document.getElementById('prevBtn').disabled = currentPage === 0;
+  document.getElementById('nextBtn').disabled = (start + rowsPerPage) >= total;
+}
+
+searchInput.addEventListener('input', () => {
+  currentPage = 0;
+  renderFarmActivity();
+});
+
+document.getElementById('prevBtn').addEventListener('click', () => {
+  if (currentPage > 0) currentPage--;
+  renderFarmActivity();
+});
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+  currentPage++;
+  renderFarmActivity();
+});
+
+// Load data when page loads
+get_farm_activity();
+setInterval(get_farm_activity, 10000);
+
+</script>
+  <script>
+    const toggleBtn = document.querySelector('.toggle-btn');
+    const sidebar = document.querySelector('.sidebar');
+
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+  </script>
+
+</body>
+</html>
